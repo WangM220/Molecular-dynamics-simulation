@@ -11,6 +11,14 @@ Install Gromacs in Linux
 Comman errors 
 https://manual.gromacs.org/current/user-guide/run-time-errors.html
 
+
+
+
 Prepare the topology file of ligand (.top and .gro) for Gromacs
 
 1. https://traken.chem.yale.edu/ligpargen/   # OPLS/CM1A Parameter Generator for Organic Ligands
+2. https://gitlab.com/KomBioMol/gromologist#adding-external-params   #handling, editing and manipulating GROMACS topology files
+
+Gromacs Tutorial
+
+http://www.mdtutorials.com/gmx/index.html 
