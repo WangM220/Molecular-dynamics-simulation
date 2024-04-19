@@ -21,7 +21,7 @@ Prepare the topology file of ligand (.top and .gro) for Gromacs
 
 Force field parameter file 
 1. https://www.charmm.org/archive/charmm/resources/charmm-force-fields/
-
+2.https://github.com/leelasd/ligpargen/blob/master/GMX_LP_MDPS
 
 Gromacs Tutorial
 
