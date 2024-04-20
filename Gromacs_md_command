@@ -1,0 +1,181 @@
+Gromacs md command and explanation 
+
+1. Create configuration and topology file
+
+gmx pdb2gmx -f receptor.pdb -o receptor.gro -ignh
+
+This command converts the protein structure file (receptor.pdb) into a Gromacs compatible format (receptor.gro). The -f option indicates input coordinate file, -o potion indicates output configuration file, the -ignh option ignores hydrogen atoms in the PDB file.
+
+gmx editconf -f ligand.pdb -o ligand.gro
+
+This command creates a Gromacs compatible structure file (ligand.gro) for the ligand from the given PDB file (ligand.pdb). Instead of using Gromacs, you can choose ligpargen to prepare configuration and topology file of small molecules (https://traken.chem.yale.edu/ligpargen/).
+
+2. Insert ligand into receptor topology file
+
+gmx insert-molecules -f receptor.gro -nmol 26 -ci ligand.gro -o complex.gro
+
+This command inserts 26 copies of the ligand (from ligand.gro) into the receptor structure (receptor.gro) and creates a new file (complex.gro) containing the complex.
+
+ 
+Then, Go to the topology file (topol.top) , #include "ligand.itp" should be added below #include ".ff/forcefield.itp", to include the ligand topology parameters.
+
+3. Create a simulation box
+
+gmx editconf -f complex.gro -o newbox.gro -bt cubic -box 8.0 8.0 8.0
+
+This command creates a cubic simulation box (newbox.gro) with dimensions 8.0 x 8.0 x 8.0 nm around the complex (complex.gro).
+
+4. Add water molecules
+
+gmx solvate -cp newbox.gro -cs spc216.gro -p topol.top -o newbox_sol.gro
+
+This command solvates the system by adding water molecules (from spc216.gro) around the complex (newbox.gro) using the topology information (topol.top). The resulting solvated system is written to newbox_sol.gro.
+
+5. Add ions
+
+gmx grompp -f ions.mdp -c newbox_sol.gro -p topol.top -o ions.tpr
+
+This command creates a portable binary run input file (ions.tpr) from the solvated system (newbox_sol.gro) and the molecular dynamics parameter file (ions.mdp) using the topology information (topol.top).
+
+6. Neutrilize the system
+ 
+gmx genion -s ions.tpr -o newbox_sol_ions.gro -p topol.top -pname NA -nname CL -neutral
+
+This command adds ions (NA and CL) to neutralize the system by replacing water molecules with ions. The -neutral option ensures that the net charge of the system is zero. 
+
+7. System Minimization
+
+gmx grompp -f em.mdp -c newbox_sol_ions.gro -p topol.top -o em.tpr
+
+This command creates a portable binary run input file (em.tpr) for energy minimization using the energy minimization parameters defined in the em.mdp file. The input files are the solvated and ionized system (newbox_sol_ions.gro) and the topology file (topol.top).
+
+mdrun -v -deffnm em
+
+This command performs the actual energy minimization simulation using the input file created in the previous step (em.tpr). The -v option enables logging, and -deffnm em specifies the output file prefix as "em".
+
+8. Make Index File for Ligand
+
+gmx make_ndx -f ligand.gro -o index_ligand.ndx 
+
+This command creates an index file (index_ligand.ndx) for the ligand structure (ligand.gro). The Gromacs index file contains some user definable sets of atoms. The index file is used to select groups of atoms for specific operations. gmx view index_ligand.ndx command can read the file.
+
+> 0 & ! a H*
+> q
+
+These commands select all atoms except hydrogen atoms and exit the interactive session.
+
+gmx genrestr -f ligand.gro -n index_ligand.ndx -o posre_ligand.itp -fc 1000 1000 1000
+
+This command generates a position restraint file (posre_ligand.itp) for the ligand atoms using the ligand structure (ligand.gro) and the index file (index_ligand.ndx). The -fc option specifies the force constants for the position restraints (1000 kJ/mol/nm^2 in this case).
+
+After this, you need to include the generated position restraint file (posre_ligand.itp) in the topology file (topol.top) by adding the following lines at the end of the topology file, after 
+
+"; Include Position restraint file
+#ifdef POSRES
+#include "posre.itp"
+#endif
+
+; Ligand position restraints
+#ifdef POSRES
+#include "posre_LIG.itp"
+#endif
+
+9. Make Index File for System
+
+gmx make_ndx -f em.gro -o index.ndx
+
+This command creates an index file (index.ndx) for the energy-minimized system (em.gro).
+
+> 1 | 13
+> q
+
+These commands select the first group (protein) or the 13th group (ligand) and exit the interactive session. 
+
+10. NVT Equilibrium
+
+gmx grompp -f nvt.mdp -c em.gro -r em.gro -p topol.top -n index.ndx -maxwarn 2 -o nvt.tpr
+
+This command creates a portable binary run input file (nvt.tpr) for NVT (constant Number of particles, Volume, and Temperature) equilibration using the parameters defined in the nvt.mdp file. The input files are the energy-minimized structure (em.gro), topology file (topol.top), and index file (index.ndx). The -r option specifies the structure file to be used as a reference for generating velocities. The -maxwarn 2 option suppresses some non-critical warnings.
+
+gmx mdrun -deffnm nvt
+
+This command runs the NVT equilibration simulation using the input file created in the previous step (nvt.tpr). 
+
+11. NPT Equilibrium
+
+
+gmx grompp -f npt.mdp -c nvt.gro -r nvt.gro -p topol.top -n index.ndx -maxwarn 2 -o npt.tpr
+
+These commands create a portable binary run input file (npt.tpr) for NPT (constant Number of particles, Pressure, and Temperature) equilibration using the parameters defined in the npt.mdp file and the input files (nvt.gro, topol.top, index.ndx). 
+
+gmx mdrun -deffnm npt
+
+12. MD Production Run
+
+gmx grompp -f md.mdp -c npt.gro -t npt.cpt -p topol.top -n index.ndx -maxwarn 2 -o md.tpr
+
+The command create a portable binary run input file (npt.tpr) for MD using the parameters defined in the md.mdp file The -t option specifies the checkpoint file (npt.cpt) to be used for continuing the simulation from the NPT equilibration step.
+
+gmx mdrun -deffnm md
+
+
+13. Recentering and Rewrapping Coordinates
+
+gmx trjconv -s md.tpr -f md.xtc -o md_center.xtc -center -pbc mol -ur compact
+
+This command recenters and rewraps the trajectory (md.xtc) using the input file (md.tpr). The -center option centers the system around the specified group (prompted to choose "Protein" for centering), the -pbc mol option removes the periodic boundary condition effects, and the -ur compact option writes a compact trajectory file (md_center.xtc).
+
+gmx trjconv -s md.tpr -f md_center.xtc -o start.pdb -dump 0
+This command extracts the first frame (t = 0 ns) of the recentered trajectory (md_center.xtc) and writes it to a PDB file (start.pdb).
+
+14. Calculate Energy
+
+gmx energy -f md.edr -o energy1.xvg
+xmgrace -nxy energy1.xvg
+
+These commands calculate the energy components from the energy file (md.edr) and write the output to a file (energy1.xvg). The xmgrace command opens the Grace plotting tool to visualize the energy components.
+
+15. RMSD (Root Mean Square Deviation)
+
+gmx rms -s md.tpr -f md_center.xtc -o rmsd.xvg
+gmx rms -s md.tpr -f md_center.xtc -o rmsd.xvg -tu ns
+
+These commands calculate the RMSD (Root Mean Square Deviation) of the system relative to the reference structure (specified in md.tpr) using the recentered trajectory (md_center.xtc). The -tu ns option sets the time unit to nanoseconds.
+
+1
+13
+
+xmgrace rmsd.xvg
+
+These commands prompt you to select groups for RMSD calculation (1 for protein and 13 for ligand), and then open the Grace plotting tool to visualize the RMSD plot.
+
+16. RMSF (Root Mean Square Fluctuation)
+
+gmx rmsf -s md.tpr -f md_center.xtc -o rmsf.xvg
+
+1
+
+These commands calculate the RMSF (Root Mean Square Fluctuation) of the system using the recentered trajectory (md_center.xtc). You are prompted to select the group for RMSF calculation (1 for protein).
+
+xmgrace rmsf.xvg
+
+This command opens the Grace plotting tool to visualize the RMSF plot.
+
+17. Hydrogen Bonds
+
+gmx hbond -s md.tpr -f md_center.xtc -num hb.xvg
+gmx hbond -s md.tpr -f md_center.xtc -num hb.xvg -tu ns
+1
+13
+xmgrace hb.xvg
+
+These commands calculate the number of hydrogen bonds between the specified groups (1 for protein and 13 for ligand) using the recentered trajectory (md_center.xtc). The -tu ns option sets the time unit to nanoseconds. The output is written to the hb.xvg file, which is then visualized using the Grace plotting tool.
+
+18. Gyration Radius
+
+gmx gyrate -s md.tpr -f md_center.xtc -o gyrate1.xvg
+xmgrace gyrate1.xvg
+
+These commands calculate the radius of gyration of the system using the recentered trajectory (md_center.xtc) and write the output to the gyrate1.xvg file. You are prompted to select the group for calculating the radius of gyration. The output is then visualized using the Grace plotting tool.
+
+
