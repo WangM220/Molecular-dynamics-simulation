@@ -20,8 +20,9 @@ Prepare the topology file of ligand (.top and .gro) for Gromacs
 2. https://gitlab.com/KomBioMol/gromologist#adding-external-params   #handling, editing and manipulating GROMACS topology files
 
 Force field parameter file 
-1. https://www.charmm.org/archive/charmm/resources/charmm-force-fields/
-2.https://github.com/leelasd/ligpargen/blob/master/GMX_LP_MDPS
+1. https://manual.gromacs.org/current/user-guide/mdp-options.html 
+2. https://www.charmm.org/archive/charmm/resources/charmm-force-fields/
+3.https://github.com/leelasd/ligpargen/blob/master/GMX_LP_MDPS
 
 Gromacs Tutorial
 
