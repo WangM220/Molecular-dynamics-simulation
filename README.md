@@ -30,5 +30,8 @@ Gromacs Tutorial
 2. https://zarbi.chem.yale.edu/ligpargen/gmx_tutorial.html # also include tutorial for NAMD
 3. https://gromacstutorials.github.io/doc-sphinx/build/html/howto.html
 
+OpenMM Tutorial
+1. https://agkeller.userpage.fu-berlin.de/index.html
+
 ebi-ac course include basis of molecular dynamics  
 4. https://www.ebi.ac.uk/training/materials/biomolecular-simulations-materials/molecular-dynamics-simulations/basis-of-molecular-dynamics-simulations/ 
