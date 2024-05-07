@@ -6,12 +6,12 @@ Training materials:
 Gromacs
 Install Gromacs in Linux
 
-1.https://www.compchems.com/how-to-install-gromacs/#how-to-install-gromacs-on-linux
+1. https://www.compchems.com/how-to-install-gromacs/#how-to-install-gromacs-on-linux
 
 2. https://www.compchems.com/how-to-run-a-molecular-dynamics-simulation-using-gromacs/#what-is-gromacs
 
 Comman errors 
-https://manual.gromacs.org/current/user-guide/run-time-errors.html
+1. https://manual.gromacs.org/current/user-guide/run-time-errors.html
 
 Prepare the topology file of ligand (.top and .gro) for Gromacs
 
@@ -25,7 +25,7 @@ Force field parameter file
 
 2. https://www.charmm.org/archive/charmm/resources/charmm-force-fields/
 
-3.https://github.com/leelasd/ligpargen/blob/master/GMX_LP_MDPS
+3. https://github.com/leelasd/ligpargen/blob/master/GMX_LP_MDPS
 
 Gromacs Tutorial
 
